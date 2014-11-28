@@ -1,12 +1,14 @@
 package tank.myhttp;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.http.HttpRequestImpl;
 import org.apache.mina.http.HttpResponseImpl;
+import org.apache.mina.http.api.HttpRequest;
 import org.apache.mina.http.api.HttpStatus;
 import org.apache.mina.http.api.HttpVersion;
 import org.slf4j.Logger;
@@ -17,22 +19,23 @@ import tank.myhttp.api.IHttpControl;
 import tank.myhttp.api.IHttpHandler;
 
 /**
-		* @author tank
-		* @date:2014-4-16 下午05:10:40
-		* @description:
-		* @version :
-		*/
+ * @author tank
+ * @date:2014-4-16 下午05:10:40
+ * @description:
+ * @version :
+ */
 @Controller
 public class HttpControl implements IHttpControl {
 	private static Logger log = LoggerFactory.getLogger(HttpControl.class);
 
 	@Override
-	public HttpResponseImpl handler(IoSession session, HttpRequestImpl message) {
+	public HttpResponseImpl handler(IoSession session, HttpRequest httpRequest) {
 		HttpResponseImpl response;
-		IHttpHandler handler = HttpAppContext.getHttpHandler(message.getRequestPath());
+		HttpRequestImpl request = (HttpRequestImpl) httpRequest;
+		IHttpHandler handler = HttpAppContext.getHttpHandler(request.getRequestPath());
 		if (handler != null) {
-			//映射请求参数
-			Map<String, String> params =null;// message.getSimpleParameters();
+			// 映射请求参数
+			Map<String, String> params = getSimpleParameters(request);
 			Iterator<Map.Entry<String, String>> it = params.entrySet().iterator();
 			while (it.hasNext()) {
 				Map.Entry<String, String> entry = it.next();
@@ -49,7 +52,7 @@ public class HttpControl implements IHttpControl {
 			}
 
 			try {
-				return handler.handler(session, message);
+				return handler.handler(session, request);
 			} catch (HttpMsgException e) {
 				e.printStackTrace();
 				log.error("{}", e);
@@ -58,22 +61,27 @@ public class HttpControl implements IHttpControl {
 				return response;
 			}
 		} else {
-			log.error("找不到相应的处理handler:{}", message.getRequestPath());
-			response = new HttpResponseImpl(HttpVersion.HTTP_1_1, HttpStatus.SERVER_ERROR_SERVICE_UNAVAILABLE, HttpHeaders.getHanders());
+			log.error("找不到相应的处理handler:{}", request.getRequestPath());
+			response = new HttpResponseImpl(HttpVersion.HTTP_1_1, HttpStatus.CLIENT_ERROR_BAD_REQUEST, HttpHeaders.getHanders());
 			return response;
 		}
 
 	}
 
-	@Override
-	public void init(IoSession session) {
+	public Map<String, String> getSimpleParameters(HttpRequestImpl request) {
+		Map<String, String> parameters = new HashMap<String, String>();
+		String[] params = request.getQueryString().split("&");
+		if (params.length == 1) {
+			return parameters;
+		}
+		for (int i = 0; i < params.length; i++) {
+			String[] param = params[i].split("=");
+			String name = param[0];
+			String value = param.length == 2 ? param[1] : "";
 
-	}
-
-	@Override
-	public void onSessionClosed(IoSession session) {
-		// TODO Auto-generated method stub
-
+			parameters.put(name, value);
+		}
+		return parameters;
 	}
 
 }

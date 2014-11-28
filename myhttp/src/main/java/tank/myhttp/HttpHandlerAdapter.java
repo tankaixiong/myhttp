@@ -33,7 +33,7 @@ public class HttpHandlerAdapter extends IoHandlerAdapter {
 	@Override
 	public void sessionOpened(IoSession session) throws Exception {
 		log.info("sessionOpened");
-		session.getConfig().setIdleTime(IdleStatus.BOTH_IDLE, 12);
+		session.getConfig().setIdleTime(IdleStatus.BOTH_IDLE, 30);
 	}
 
 	/**
@@ -59,14 +59,14 @@ public class HttpHandlerAdapter extends IoHandlerAdapter {
 	 */
 	@Override
 	public void messageReceived(IoSession session, Object message) throws Exception {
-		log.info("messageReceived收到消息:{}", message);
+		log.trace("messageReceived收到消息:{}", message);
 		if (message instanceof HttpEndOfContent) {
 			HttpEndOfContent endContent = (HttpEndOfContent) message;
-			log.info("收到HttpEndOfContent: {}", endContent);
+			log.trace("收到HttpEndOfContent: {}", endContent);
 
 		} else if (message instanceof HttpRequestImpl) {
 			HttpRequestImpl request = (HttpRequestImpl) message;
-			log.info("收到HttpRequestImpl:{}", request.getRequestPath());
+			log.trace("收到HttpRequestImpl:{}", request.getRequestPath());
 			HttpResponseImpl response = control.handler(session, request);
 			if (response != null) {
 				session.write(response).addListener(IoFutureListener.CLOSE);
@@ -84,7 +84,7 @@ public class HttpHandlerAdapter extends IoHandlerAdapter {
 
 	@Override
 	public void messageSent(IoSession session, Object message) throws Exception {
-		log.info("发送数据:{}", message);
+		log.trace("发送数据:{}", message);
 		super.messageSent(session, message);
 	}
 

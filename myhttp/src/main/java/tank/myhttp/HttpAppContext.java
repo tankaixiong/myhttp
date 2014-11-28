@@ -16,38 +16,28 @@ import tank.myhttp.api.IHttpHandler;
  * @version :
  */
 public class HttpAppContext {
-	private static Logger log = LoggerFactory.getLogger(HttpAppContext.class);
-	private static Map<String, IHttpHandler> httpHandlers;
-
-	private static AbstractApplicationContext appContext;
+	private static Logger logger = LoggerFactory.getLogger(HttpAppContext.class);
+	private static Map<String, IHttpHandler> httpHandlers = new HashMap<String, IHttpHandler>();;
 
 	public void init(AbstractApplicationContext appContext) {
-		this.appContext = appContext;
-	}
 
-	/**
-	 * 获得系统支持的所有Handlers(消息处理程序)
-	 */
-	public static Map<String, IHttpHandler> getHttpHandlers() {
-
-		if (httpHandlers == null) {
-			Map<String, IHttpHandler> handlers = appContext.getBeansOfType(IHttpHandler.class);
-			if (handlers != null && handlers.size() > 0) {
-				httpHandlers = new HashMap<String, IHttpHandler>();
-				for (IHttpHandler handler : handlers.values()) {
-					if (httpHandlers.containsKey(handler.getUrl())) {
-						log.error("存在相同KEY的handler{}", handler.getUrl());
-						System.exit(0);// TODO:也可以去掉
-					}
-					httpHandlers.put(handler.getUrl(), handler);
+		Map<String, IHttpHandler> handlers = appContext.getBeansOfType(IHttpHandler.class);
+		if (handlers != null && !handlers.isEmpty()) {
+			for (IHttpHandler handler : handlers.values()) {
+				if (httpHandlers.containsKey(handler.getUrl())) {
+					logger.error("存在相同KEY的handler{}", handler.getUrl());
+					System.exit(0);// TODO:也可以去掉
 				}
+				httpHandlers.put(handler.getUrl(), handler);
 			}
+		} else {
+			logger.warn("找有没到任务http handler实现 ");
 		}
-		return httpHandlers;
+
 	}
 
 	public static IHttpHandler getHttpHandler(String url) {
-		return getHttpHandlers() == null ? null : getHttpHandlers().get(url);
+		return httpHandlers.get(url);
 	}
 
 }
