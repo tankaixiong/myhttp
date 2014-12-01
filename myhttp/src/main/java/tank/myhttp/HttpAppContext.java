@@ -6,6 +6,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.stereotype.Component;
 
 import tank.myhttp.api.IHttpHandler;
 
@@ -15,11 +16,16 @@ import tank.myhttp.api.IHttpHandler;
  * @description:
  * @version :
  */
+@Component
 public class HttpAppContext {
 	private static Logger logger = LoggerFactory.getLogger(HttpAppContext.class);
-	private static Map<String, IHttpHandler> httpHandlers = new HashMap<String, IHttpHandler>();;
+	private static Map<String, IHttpHandler> httpHandlers = new HashMap<String, IHttpHandler>();
 
-	public void init(AbstractApplicationContext appContext) {
+	public HttpAppContext() {
+
+	}
+
+	public static void init(AbstractApplicationContext appContext) {
 
 		Map<String, IHttpHandler> handlers = appContext.getBeansOfType(IHttpHandler.class);
 		if (handlers != null && !handlers.isEmpty()) {

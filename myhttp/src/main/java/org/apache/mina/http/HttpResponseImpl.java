@@ -11,7 +11,7 @@ import org.apache.mina.http.api.HttpVersion;
 
 /**
 		* @author tank
-		* @date:2014-4-16 ÏÂÎç12:09:15
+		* @date:2014-4-16 ä¸‹åˆ12:09:15
 		* @description:
 		* @version :
 		*/

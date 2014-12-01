@@ -34,39 +34,68 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HttpServerEncoder implements ProtocolEncoder {
-    private static final Logger LOG = LoggerFactory.getLogger(HttpServerCodec.class);
-    private static final CharsetEncoder ENCODER = Charset.forName("UTF-8").newEncoder();
+	private static final Logger LOG = LoggerFactory.getLogger(HttpServerCodec.class);
+	private static final CharsetEncoder ENCODER = Charset.forName("UTF-8").newEncoder();
 
-    public void encode(IoSession session, Object message, ProtocolEncoderOutput out) throws Exception {
-    	LOG.debug("encode {}", message.getClass().getCanonicalName());
-        if (message instanceof HttpResponse) {
-        	LOG.debug("HttpResponse");
-            HttpResponse msg = (HttpResponse) message;
-            StringBuilder sb = new StringBuilder(msg.getStatus().line());
+	public void encode(IoSession session, Object message, ProtocolEncoderOutput out) throws Exception {
+		LOG.debug("encode {}", message.getClass().getCanonicalName());
+		if (message instanceof HttpResponseImpl) {//add by tank
+			HttpResponseImpl msg = (HttpResponseImpl) message;
+			StringBuilder sb = new StringBuilder(msg.getStatus().line());
 
-            for (Map.Entry<String, String> header : msg.getHeaders().entrySet()) {
-                sb.append(header.getKey());
-                sb.append(": ");
-                sb.append(header.getValue());
-                sb.append("\r\n");
-            }
-            sb.append("\r\n");
-            IoBuffer buf = IoBuffer.allocate(sb.length()).setAutoExpand(true);
-            buf.putString(sb.toString(), ENCODER);
-            buf.flip();
-            out.write(buf);
-        } else if (message instanceof ByteBuffer) {
-        	LOG.debug("Body {}", message);
-        	out.write(message);
-        } else if (message instanceof HttpEndOfContent) {
-        	LOG.debug("End of Content");
-            // end of HTTP content
-            // keep alive ?
-        }
+			for (Map.Entry<String, String> header : msg.getHeaders().entrySet()) {
+				sb.append(header.getKey());
+				sb.append(": ");
+				sb.append(header.getValue());
+				sb.append("\r\n");
+			}
 
-    }
+			sb.append("Content-Length");
+			sb.append(": ");
+			sb.append(msg.getBodyLength());
+			sb.append("\r\n");
 
-    public void dispose(IoSession session) throws Exception {
-        // TODO Auto-generated method stub
-    }
+			sb.append("\r\n");
+			// Java 6 >> byte[] bytes =
+			// sb.toString().getBytes(Charset.forName("UTF-8"));
+			// byte[] bytes = sb.toString().getBytes();
+			// out.write(ByteBuffer.wrap(bytes));
+			IoBuffer buf = IoBuffer.allocate(sb.length() + msg.getBodyLength()).setAutoExpand(true);
+			buf.putString(sb.toString(), ENCODER);
+
+			buf.put(msg.getBody());
+
+			buf.flip();
+			out.write(buf);
+
+		} else if (message instanceof HttpResponse) {
+			LOG.debug("HttpResponse");
+			HttpResponse msg = (HttpResponse) message;
+			StringBuilder sb = new StringBuilder(msg.getStatus().line());
+
+			for (Map.Entry<String, String> header : msg.getHeaders().entrySet()) {
+				sb.append(header.getKey());
+				sb.append(": ");
+				sb.append(header.getValue());
+				sb.append("\r\n");
+			}
+			sb.append("\r\n");
+			IoBuffer buf = IoBuffer.allocate(sb.length()).setAutoExpand(true);
+			buf.putString(sb.toString(), ENCODER);
+			buf.flip();
+			out.write(buf);
+		} else if (message instanceof ByteBuffer) {
+			LOG.debug("Body {}", message);
+			out.write(message);
+		} else if (message instanceof HttpEndOfContent) {
+			LOG.debug("End of Content");
+			// end of HTTP content
+			// keep alive ?
+		}
+
+	}
+
+	public void dispose(IoSession session) throws Exception {
+		// TODO Auto-generated method stub
+	}
 }
